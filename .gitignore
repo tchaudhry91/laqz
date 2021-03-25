@@ -1,4 +1,5 @@
 qhub
+tux-sudo.pem
 .vscode/*
 # Binaries for programs and plugins
 *.exe

@@ -1,26 +1,25 @@
 package svc
 
 import (
-	"fmt"
+	"context"
 	"net/http"
-
-	"google.golang.org/api/idtoken"
 )
 
 func (s QServer) AuthMW(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		headers := req.Header
-		token := headers.Get("token")
-		if token == "" {
-			s.respond(w, req, nil, http.StatusUnauthorized, fmt.Errorf("No token supplied"))
-			return
-		}
-		tinfo, err := idtoken.Validate(req.Context(), token, "")
+		token, err := s.validator.ValidateRequest(req)
 		if err != nil {
-			s.respond(w, req, nil, http.StatusUnauthorized, fmt.Errorf("No token supplied"))
+			s.respond(w, req, nil, http.StatusUnauthorized, err)
 			return
 		}
-		fmt.Println(tinfo)
+		claims := map[string]interface{}{}
+		err = token.Claims(token, &claims)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusUnauthorized, err)
+			return
+		}
+		ctx := context.WithValue(req.Context(), "claims", claims)
+		req = req.WithContext(ctx)
 		next.ServeHTTP(w, req)
 	})
 }
