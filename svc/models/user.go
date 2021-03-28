@@ -4,7 +4,5 @@ import "gorm.io/gorm"
 
 type User struct {
 	gorm.Model
-	Email       string `gorm:"uniqueIndex"`
-	DisplayName string
-	PictureLink string
+	Email string `gorm:"uniqueIndex"`
 }

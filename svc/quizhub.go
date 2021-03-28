@@ -28,17 +28,7 @@ func (hub *QHub) LogIn(email, name, avatarURL string) (err error) {
 			return fmt.Errorf("Error while fetching User from database: %w", err)
 		}
 	}
-	// User Found (update)
-	if err == nil {
-		u.DisplayName = name
-		u.PictureLink = avatarURL
-		err = hub.db.UpdateUser(u)
-		if err != nil {
-			return fmt.Errorf("Error while updating user: %w", err)
-		}
-		return nil
-	}
-	u = &models.User{Email: email, DisplayName: name, PictureLink: avatarURL}
+	u = &models.User{Email: email}
 	err = hub.db.CreateUser(u)
 	return
 }
