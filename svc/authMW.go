@@ -1,25 +1,23 @@
 package svc
 
 import (
-	"context"
+	"fmt"
 	"net/http"
 )
 
 func (s QServer) AuthMW(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		token, err := s.validator.ValidateRequest(req)
-		if err != nil {
-			s.respond(w, req, nil, http.StatusUnauthorized, err)
+		fmt.Println(req.Header)
+		idtoken, ok := req.Header["Token"]
+		if !ok {
+			s.respond(w, req, nil, http.StatusUnauthorized, fmt.Errorf("No Token Supplied"))
 			return
 		}
-		claims := map[string]interface{}{}
-		err = token.Claims(token, &claims)
+		token, err := s.authClient.VerifyIDToken(req.Context(), idtoken[0])
 		if err != nil {
-			s.respond(w, req, nil, http.StatusUnauthorized, err)
-			return
+			s.respond(w, req, nil, http.StatusUnauthorized, fmt.Errorf("Could not verify token:%w", err))
 		}
-		ctx := context.WithValue(req.Context(), "claims", claims)
-		req = req.WithContext(ctx)
+		fmt.Println(token)
 		next.ServeHTTP(w, req)
 	})
 }

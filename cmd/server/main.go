@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	firebase "firebase.google.com/go"
 	"github.com/go-kit/kit/log"
 	"github.com/peterbourgon/ff"
 	"github.com/tchaudhry91/laqz/svc"
@@ -17,11 +18,9 @@ import (
 func main() {
 	fs := flag.NewFlagSet("qhub", flag.ExitOnError)
 	var (
-		listenAddr    = fs.String("listen-addr", "localhost:8080", "listen address")
-		dbDSN         = fs.String("db-dsn", "postgresql://postgres:password@127.0.0.1:42261/laqz?sslmode=disable", "Database Connection String")
-		auth0Domain   = fs.String("auth0-domain", "https://tux-sudo.us.auth0.com/", "auth0domain")
-		auth0ClientID = fs.String("auth0-clientID", "9YNFdapfaDrGNu4ktFacwKpnHFK2hw8c", "auth0-client")
-		auth0PEM      = fs.String("auth0-secret-pem", "tux-sudo.pem", "auth0-secret certificate")
+		listenAddr      = fs.String("listen-addr", "localhost:8080", "listen address")
+		dbDSN           = fs.String("db-dsn", "postgresql://postgres:password@127.0.0.1:42261/laqz?sslmode=disable", "Database Connection String")
+		firebaseKeyFile = fs.String("firebase-admin-key", "", "Firebase Admin Private Key")
 	)
 
 	ff.Parse(fs, os.Args[1:],
@@ -40,7 +39,21 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 
-	server := svc.NewQServer(hub, *listenAddr, logger, *auth0ClientID, *auth0PEM, *auth0Domain)
+	if *firebaseKeyFile != "" {
+		initFirebase(*firebaseKeyFile)
+	}
+
+	firebaseApp, err := firebase.NewApp(context.Background(), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	authClient, err := firebaseApp.Auth(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	server := svc.NewQServer(hub, *listenAddr, logger, authClient)
 	go func() {
 		logger.Log("msg", "Starting server..", "listenAddr", *listenAddr)
 		err = server.Start()
@@ -58,4 +71,8 @@ func main() {
 	if err != nil {
 		logger.Log("error", err)
 	}
+}
+
+func initFirebase(firebaseKeyFile string) {
+	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", firebaseKeyFile)
 }

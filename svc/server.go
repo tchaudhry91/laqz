@@ -6,43 +6,28 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
-	"github.com/auth0-community/go-auth0"
+	"firebase.google.com/go/auth"
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
-	"gopkg.in/square/go-jose.v2"
 )
 
 type QServer struct {
-	hub       QuizHub
-	router    *mux.Router
-	server    *http.Server
-	logger    log.Logger
-	validator *auth0.JWTValidator
+	hub        QuizHub
+	router     *mux.Router
+	server     *http.Server
+	logger     log.Logger
+	authClient *auth.Client
 }
 
-func NewQServer(hub QuizHub, listenAddr string, logger log.Logger, auth0ClientID, auth0PEM, auth0Domain string) *QServer {
+func NewQServer(hub QuizHub, listenAddr string, logger log.Logger, authClient *auth.Client) *QServer {
 	router := mux.NewRouter()
-	// Create a configuration with the Auth0 information
-	pem, err := ioutil.ReadFile(auth0PEM)
-	if err != nil {
-		panic(err)
-	}
-	secret, err := LoadPublicKey(pem)
-	if err != nil {
-		panic(err)
-	}
-	secretProvider := auth0.NewKeyProvider(secret)
-	configuration := auth0.NewConfiguration(secretProvider, []string{}, auth0Domain, jose.RS256)
-
-	validator := auth0.NewValidator(configuration, nil)
 	s := &QServer{
-		hub:       hub,
-		router:    router,
-		logger:    logger,
-		validator: validator,
+		authClient: authClient,
+		hub:        hub,
+		router:     router,
+		logger:     logger,
 	}
 	s.server = &http.Server{Addr: listenAddr, Handler: s.CorsMW()}
 	s.routes()
