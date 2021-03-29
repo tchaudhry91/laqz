@@ -10,7 +10,6 @@ type Question struct {
 	Text      string
 	ImageLink string
 	AudioLink string
-	Options   []string
-	Tags      []string
 	Answer    string
+	Tags      []*Tag `gorm:"many2many:question_tags"`
 }

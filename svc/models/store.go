@@ -16,7 +16,7 @@ type QuizStore interface {
 	UpdateQuiz(qz *Quiz) error
 	CreateQuestion(q *Question) error
 	GetQuestion(id uint) (q *Question, err error)
-	GetQuestionsByQuiz(qzID uint) (qq []Question, err error)
+	GetQuestionsByQuiz(qzID uint) (qq []*Question, err error)
 }
 
 type QuizPGStore struct {
@@ -31,7 +31,8 @@ func NewQuizPGStore(dsn string) (*QuizPGStore, error) {
 		return &QuizPGStore{}, err
 	}
 	st := &QuizPGStore{client: db}
-	return st, nil
+	err = st.Migrate()
+	return st, err
 
 }
 
@@ -94,7 +95,7 @@ func (db *QuizPGStore) GetQuestion(id uint) (q *Question, err error) {
 	return
 }
 
-func (db *QuizPGStore) GetQuestionsByQuiz(qzID uint) (qq []Question, err error) {
+func (db *QuizPGStore) GetQuestionsByQuiz(qzID uint) (qq []*Question, err error) {
 	qz := &Quiz{}
 	err = db.client.Preload("Questions").First(qz, qzID).Error
 	if err != nil {

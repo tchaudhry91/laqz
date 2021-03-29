@@ -19,7 +19,7 @@ func (s QServer) AuthMW(next http.Handler) http.Handler {
 		if err != nil {
 			s.respond(w, req, nil, http.StatusUnauthorized, fmt.Errorf("Could not verify token:%w", err))
 		}
-		user := models.User{Email: token.Claims["email"].(string)}
+		user := models.User{Email: token.Claims["email"].(string), Name: token.Claims["name"].(string), AvatarURL: token.Claims["picture"].(string)}
 		ctx := req.Context()
 		ctx = context.WithValue(ctx, "user", user)
 		req = req.WithContext(ctx)
