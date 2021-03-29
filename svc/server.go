@@ -2,10 +2,7 @@ package svc
 
 import (
 	"context"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
-	"fmt"
 	"net/http"
 
 	"firebase.google.com/go/auth"
@@ -56,34 +53,8 @@ func (s *QServer) respond(w http.ResponseWriter, req *http.Request, data interfa
 	}
 }
 
-// Extracted from https://github.com/square/go-jose/blob/master/utils.go
-// LoadPublicKey loads a public key from PEM/DER-encoded data.
-// You can download the Auth0 pem file from `applications -> your_app -> scroll down -> Advanced Settings -> certificates -> download`
-func LoadPublicKey(data []byte) (interface{}, error) {
-	input := data
-
-	block, _ := pem.Decode(data)
-	if block != nil {
-		input = block.Bytes
-	}
-
-	// Try to load SubjectPublicKeyInfo
-	pub, err0 := x509.ParsePKIXPublicKey(input)
-	if err0 == nil {
-		return pub, nil
-	}
-
-	cert, err1 := x509.ParseCertificate(input)
-	if err1 == nil {
-		return cert.PublicKey, nil
-	}
-
-	return nil, fmt.Errorf("square/go-jose: parse error, got '%s' and '%s'", err0, err1)
-}
-
-// Login is the handler to complete the login process
-// GET /auth/google
-func (s *QServer) Home() http.HandlerFunc {
+// Health is the handler to check if the service is up
+func (s *QServer) Health() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		s.respond(w, req, map[string]string{"name": "QuizHub"}, http.StatusOK, nil)
 	}

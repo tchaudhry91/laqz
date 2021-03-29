@@ -8,8 +8,12 @@ import (
 
 // routes registers the handlers to the specified routes
 func (s *QServer) routes() {
-	s.router.Use(s.AuthMW)
-	s.router.Handle("/", s.Home()).Methods("GET")
+	s.router.Handle("/healthz", s.Health()).Methods("GET")
+
+	// Quiz Routes
+	quizRoutes := s.router.PathPrefix("/quiz").Subrouter()
+	quizRoutes.Handle("/", s.AuthMW(s.CreateQuiz())).Methods("POST")
+	quizRoutes.Handle("/{id}/", s.GetQuiz()).Methods("GET")
 }
 
 // CorsMW is a middleware to add CORS header to the response

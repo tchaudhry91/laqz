@@ -10,7 +10,8 @@ type QuizStore interface {
 	UpdateUser(u *User) error
 	GetUserByEmail(email string) (u *User, err error)
 	CreateQuiz(qz *Quiz) error
-	GetQuiz(name string) (qz *Quiz, err error)
+	GetQuizByName(name string) (qz *Quiz, err error)
+	GetQuiz(id uint) (qz *Quiz, err error)
 	GetAllQuizzes() (qzs []*Quiz, err error)
 	GetQuizzesByUser(email string) (qzs []*Quiz, err error)
 	UpdateQuiz(qz *Quiz) error
@@ -63,9 +64,15 @@ func (db *QuizPGStore) CreateQuiz(qz *Quiz) error {
 	return db.client.Create(qz).Error
 }
 
-func (db *QuizPGStore) GetQuiz(name string) (qz *Quiz, err error) {
+func (db *QuizPGStore) GetQuizByName(name string) (qz *Quiz, err error) {
 	qz = &Quiz{}
 	err = db.client.Where("name = ?", name).First(qz).Error
+	return
+}
+
+func (db *QuizPGStore) GetQuiz(id uint) (qz *Quiz, err error) {
+	qz = &Quiz{}
+	err = db.client.Where("id = ?", id).First(qz).Error
 	return
 }
 

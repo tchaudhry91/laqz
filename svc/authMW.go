@@ -21,9 +21,9 @@ func (s QServer) AuthMW(next http.Handler) http.Handler {
 		}
 		user := models.User{Email: token.Claims["email"].(string), Name: token.Claims["name"].(string), AvatarURL: token.Claims["picture"].(string)}
 		ctx := req.Context()
-		ctx = context.WithValue(ctx, "user", user)
+		ctx = context.WithValue(ctx, s.hub.UserContextKey(), &user)
 		req = req.WithContext(ctx)
-		err = s.hub.LogIn(&user)
+		err = s.hub.LogIn(req.Context(), &user)
 		if err != nil {
 			s.respond(w, req, nil, http.StatusInternalServerError, err)
 			return
