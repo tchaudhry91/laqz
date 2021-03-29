@@ -23,7 +23,11 @@ func (s QServer) AuthMW(next http.Handler) http.Handler {
 		ctx := req.Context()
 		ctx = context.WithValue(ctx, "user", user)
 		req = req.WithContext(ctx)
-		s.hub.LogIn(&user)
+		err = s.hub.LogIn(&user)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusInternalServerError, err)
+			return
+		}
 		next.ServeHTTP(w, req)
 	})
 }
