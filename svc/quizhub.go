@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/tchaudhry91/laqz/svc/models"
@@ -8,7 +9,7 @@ import (
 )
 
 type QuizHub interface {
-	LogIn(email, name, avatarURL string) (err error)
+	LogIn(user *models.User) (err error)
 }
 
 type QHub struct {
@@ -21,14 +22,17 @@ func NewQHub(db models.QuizStore) *QHub {
 	}
 }
 
-func (hub *QHub) LogIn(email, name, avatarURL string) (err error) {
-	u, err := hub.db.GetUserByEmail(email)
+func (hub *QHub) LogIn(user *models.User) (err error) {
+	// Check if user exists
+	u, err := hub.db.GetUserByEmail(user.Email)
 	if err != nil {
-		if err != gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("Error while fetching User from database: %w", err)
+		} else {
+			// User Not Found
+			return hub.db.CreateUser(user)
 		}
 	}
-	u = &models.User{Email: email}
-	err = hub.db.CreateUser(u)
-	return
+	// User Found. Update as necessary
+	return hub.db.UpdateUser(u)
 }
