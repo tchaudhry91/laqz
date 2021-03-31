@@ -45,7 +45,7 @@ func (hub *QHub) LogIn(ctx context.Context, user *models.User) (err error) {
 	// Check if user exists
 	u, err := hub.db.GetUserByEmail(user.Email)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("Error while fetching User from database: %w", err)
 		} else {
 			// User Not Found
