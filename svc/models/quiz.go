@@ -33,3 +33,12 @@ func (qz *Quiz) AddQuestion(q *Question) {
 func (qz *Quiz) Publish() {
 	qz.Private = false
 }
+
+func (qz *Quiz) CanView(email string) bool {
+	for i := range qz.Collaborators {
+		if qz.Collaborators[i].Email == email {
+			return true
+		}
+	}
+	return false
+}

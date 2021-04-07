@@ -16,6 +16,7 @@ type QuizHub interface {
 	LogIn(ctx context.Context, user *models.User) (err error)
 	CreateQuiz(ctx context.Context, name string) (qz *models.Quiz, err error)
 	GetQuiz(ctx context.Context, id uint) (qz *models.Quiz, err error)
+	GetMyQuizzes(ctx context.Context) (qqz []*models.Quiz, err error)
 }
 
 type QHub struct {
@@ -74,5 +75,22 @@ func (hub *QHub) CreateQuiz(ctx context.Context, name string) (qz *models.Quiz, 
 }
 
 func (hub *QHub) GetQuiz(ctx context.Context, id uint) (qz *models.Quiz, err error) {
-	return hub.db.GetQuiz(id)
+	u, err := getUserFromContext(ctx, hub.UserContextKey())
+	if err != nil {
+		return qz, err
+	}
+	qz, err = hub.db.GetQuiz(id)
+	if qz.CanView(u.Email) {
+		return nil, fmt.Errorf("This quiz has been kept private by the collaborators")
+	}
+	return
+}
+
+func (hub *QHub) GetMyQuizzes(ctx context.Context) (qqz []*models.Quiz, err error) {
+	u, err := getUserFromContext(ctx, hub.UserContextKey())
+	if err != nil {
+		return qqz, err
+	}
+	qqz, err = hub.db.GetQuizzesByUser(u.Email)
+	return
 }

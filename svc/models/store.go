@@ -72,7 +72,7 @@ func (db *QuizPGStore) GetQuizByName(name string) (qz *Quiz, err error) {
 
 func (db *QuizPGStore) GetQuiz(id uint) (qz *Quiz, err error) {
 	qz = &Quiz{}
-	err = db.client.Where("id = ?", id).First(qz).Error
+	err = db.client.Preload("Collaborators").Where("id = ?", id).First(qz).Error
 	return
 }
 
@@ -83,8 +83,9 @@ func (db *QuizPGStore) GetAllQuizzes() (qzs []*Quiz, err error) {
 }
 
 func (db *QuizPGStore) GetQuizzesByUser(email string) (qzs []*Quiz, err error) {
-	qzs = make([]*Quiz, 0)
-	err = db.client.Where("email = ?", email).Find(qzs).Error
+	u := &User{}
+	err = db.client.Preload("Quizzes").Where("email = ?", email).First(u).Error
+	qzs = u.Quizzes
 	return
 }
 
