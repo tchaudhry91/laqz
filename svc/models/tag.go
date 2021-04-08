@@ -3,6 +3,6 @@ package models
 import "gorm.io/gorm"
 
 type Tag struct {
-	gorm.Model
-	Name string
+	gorm.Model `json:"-"`
+	Name       string `json:"name,omitempty"`
 }

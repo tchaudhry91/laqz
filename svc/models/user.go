@@ -3,9 +3,9 @@ package models
 import "gorm.io/gorm"
 
 type User struct {
-	gorm.Model
-	Email     string `gorm:"uniqueIndex"`
-	Name      string
-	Quizzes   []*Quiz `gorm:"many2many:quiz_collaborators"`
-	AvatarURL string
+	gorm.Model `json:"-"`
+	Email      string  `gorm:"uniqueIndex" json:"email,omitempty"`
+	Name       string  `json:"name,omitempty"`
+	Quizzes    []*Quiz `gorm:"many2many:quiz_collaborators" json:"quizzes,omitempty"`
+	AvatarURL  string  `json:"avatar_url,omitempty"`
 }

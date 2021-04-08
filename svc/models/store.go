@@ -10,6 +10,7 @@ type QuizStore interface {
 	UpdateUser(u *User) error
 	GetUserByEmail(email string) (u *User, err error)
 	CreateQuiz(qz *Quiz) error
+	DeleteQuiz(id uint) error
 	GetQuizByName(name string) (qz *Quiz, err error)
 	GetQuiz(id uint) (qz *Quiz, err error)
 	GetAllQuizzes() (qzs []*Quiz, err error)
@@ -18,6 +19,7 @@ type QuizStore interface {
 	CreateQuestion(q *Question) error
 	GetQuestion(id uint) (q *Question, err error)
 	GetQuestionsByQuiz(qzID uint) (qq []*Question, err error)
+	GetTagByName(name string) (t *Tag, err error)
 }
 
 type QuizPGStore struct {
@@ -72,7 +74,7 @@ func (db *QuizPGStore) GetQuizByName(name string) (qz *Quiz, err error) {
 
 func (db *QuizPGStore) GetQuiz(id uint) (qz *Quiz, err error) {
 	qz = &Quiz{}
-	err = db.client.Preload("Collaborators").Where("id = ?", id).First(qz).Error
+	err = db.client.Preload("Collaborators").Preload("Tags").Where("id = ?", id).First(qz).Error
 	return
 }
 
@@ -103,6 +105,14 @@ func (db *QuizPGStore) GetQuestion(id uint) (q *Question, err error) {
 	return
 }
 
+func (db *QuizPGStore) DeleteQuiz(id uint) (err error) {
+	err = db.client.Delete(&Quiz{}, id).Error
+	if err != nil {
+		return
+	}
+	return
+}
+
 func (db *QuizPGStore) GetQuestionsByQuiz(qzID uint) (qq []*Question, err error) {
 	qz := &Quiz{}
 	err = db.client.Preload("Questions").First(qz, qzID).Error
@@ -110,4 +120,10 @@ func (db *QuizPGStore) GetQuestionsByQuiz(qzID uint) (qq []*Question, err error)
 		return qq, err
 	}
 	return qz.Questions, nil
+}
+
+func (db *QuizPGStore) GetTagByName(name string) (t *Tag, err error) {
+	t = &Tag{}
+	err = db.client.Where("name = ?", name).First(t).Error
+	return
 }

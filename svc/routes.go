@@ -8,12 +8,14 @@ import (
 
 // routes registers the handlers to the specified routes
 func (s *QServer) routes() {
+	s.router.Use(s.LoggingMW)
 	s.router.Handle("/healthz", s.Health()).Methods("GET")
 
 	// Quiz Routes
 	quizRoutes := s.router.PathPrefix("/quiz").Subrouter()
 	quizRoutes.Handle("/", s.AuthMW(s.CreateQuiz())).Methods("POST")
-	quizRoutes.Handle("/{id}/", s.GetQuiz()).Methods("GET")
+	quizRoutes.Handle("/{id}/", s.AuthMW(s.GetQuiz())).Methods("GET")
+	quizRoutes.Handle("/{id}/", s.AuthMW(s.DeleteQuiz())).Methods("DELETE")
 	quizRoutes.Handle("/list/user/", s.AuthMW(s.GetMyQuizzes())).Methods("GET")
 }
 

@@ -7,7 +7,7 @@ import (
 )
 
 type Buzz struct {
-	gorm.Model
+	gorm.Model `json:"-"`
 	TS         time.Time `json:"ts,omitempty"`
 	UserID     uint      `json:"user_id,omitempty"`
 	QuestionID uint      `json:"question_id,omitempty"`

@@ -15,7 +15,8 @@ import (
 func (s *QServer) CreateQuiz() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		type Request struct {
-			Name string `json:"name,omitempty"`
+			Name string   `json:"name,omitempty"`
+			Tags []string `json:"tags,omitempty"`
 		}
 		type Response struct {
 			Quiz *models.Quiz `json:"quiz,omitempty"`
@@ -28,7 +29,7 @@ func (s *QServer) CreateQuiz() http.HandlerFunc {
 			s.respond(w, req, nil, http.StatusBadRequest, err)
 			return
 		}
-		qz, err := s.hub.CreateQuiz(req.Context(), r.Name)
+		qz, err := s.hub.CreateQuiz(req.Context(), r.Name, r.Tags)
 		if err != nil {
 			s.respond(w, req, nil, http.StatusInternalServerError, err)
 			return
@@ -67,6 +68,7 @@ func (s *QServer) GetQuiz() http.HandlerFunc {
 				return
 			}
 			s.respond(w, req, nil, http.StatusInternalServerError, err)
+			return
 		}
 		resp := &Response{
 			Quiz: qz,
@@ -95,5 +97,38 @@ func (s *QServer) GetMyQuizzes() http.HandlerFunc {
 		}
 		resp.Quizzes = qqz
 		s.respond(w, req, resp, http.StatusOK, nil)
+	}
+}
+
+func (s *QServer) DeleteQuiz() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		type Request struct {
+			ID uint `json:"id,omitempty"`
+		}
+		type Response struct {
+			Err string `json:"err,omitempty"`
+		}
+
+		r := Request{}
+		params := mux.Vars(req)
+		idStr := params["id"]
+		var id int
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, fmt.Errorf("Bad ID supplied"))
+			return
+		}
+		resp := Response{}
+		r.ID = uint(id)
+		err = s.hub.DeleteQuiz(req.Context(), r.ID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				resp.Err = err.Error()
+				s.respond(w, req, resp, http.StatusNotFound, nil)
+				return
+			}
+			s.respond(w, req, nil, http.StatusInternalServerError, err)
+			return
+		}
 	}
 }
