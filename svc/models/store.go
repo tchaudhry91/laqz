@@ -3,6 +3,7 @@ package models
 import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type QuizStore interface {
@@ -13,6 +14,7 @@ type QuizStore interface {
 	DeleteQuiz(id uint) error
 	GetQuizByName(name string) (qz *Quiz, err error)
 	GetQuiz(id uint) (qz *Quiz, err error)
+	GetPreloadedQuiz(id uint) (qz *Quiz, err error)
 	GetAllQuizzes() (qzs []*Quiz, err error)
 	GetQuizzesByUser(email string) (qzs []*Quiz, err error)
 	UpdateQuiz(qz *Quiz) error
@@ -75,6 +77,12 @@ func (db *QuizPGStore) GetQuizByName(name string) (qz *Quiz, err error) {
 func (db *QuizPGStore) GetQuiz(id uint) (qz *Quiz, err error) {
 	qz = &Quiz{}
 	err = db.client.Preload("Collaborators").Preload("Tags").Where("id = ?", id).First(qz).Error
+	return
+}
+
+func (db *QuizPGStore) GetPreloadedQuiz(id uint) (qz *Quiz, err error) {
+	qz = &Quiz{}
+	err = db.client.Preload(clause.Associations).Where("id = ?", id).First(qz).Error
 	return
 }
 

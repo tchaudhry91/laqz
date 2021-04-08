@@ -132,3 +132,46 @@ func (s *QServer) DeleteQuiz() http.HandlerFunc {
 		}
 	}
 }
+
+func (s *QServer) AddQuestion() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		type Request struct {
+			QuizID       uint   `json:"quiz_id,omitempty"`
+			Text         string `json:"text,omitempty"`
+			ImageLink    string `json:"image_link,omitempty"`
+			AudioLink    string `json:"audio_link,omitempty"`
+			Answer       string `json:"answer,omitempty"`
+			Points       uint   `json:"points,omitempty"`
+			TimerSeconds uint   `json:"timer_seconds,omitempty"`
+		}
+
+		type Response struct {
+			Err string `json:"err,omitempty"`
+		}
+		r := Request{}
+
+		defer req.Body.Close()
+		err := json.NewDecoder(req.Body).Decode(&r)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, err)
+			return
+		}
+
+		if r.Text == "" || r.Answer == "" {
+			s.respond(w, req, nil, http.StatusBadRequest, fmt.Errorf("You must supply atleast some text and an answer"))
+			return
+		}
+
+		q := models.NewQuestion(r.QuizID, r.Text, r.ImageLink, r.AudioLink, r.Answer, r.Points, r.TimerSeconds)
+
+		err = s.hub.AddQuestion(req.Context(), q)
+
+		if err != nil {
+			s.respond(w, req, nil, http.StatusInternalServerError, err)
+			return
+		}
+
+		s.respond(w, req, nil, http.StatusCreated, nil)
+
+	}
+}

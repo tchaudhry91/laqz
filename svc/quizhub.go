@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var NotPermittedError = errors.New("User is not permitted for the following action")
+
 type contextKey string
 
 type QuizHub interface {
@@ -18,6 +20,7 @@ type QuizHub interface {
 	DeleteQuiz(ctx context.Context, id uint) (err error)
 	GetQuiz(ctx context.Context, id uint) (qz *models.Quiz, err error)
 	GetMyQuizzes(ctx context.Context) (qqz []*models.Quiz, err error)
+	AddQuestion(ctx context.Context, q *models.Question) (err error)
 }
 
 type QHub struct {
@@ -121,7 +124,26 @@ func (hub *QHub) DeleteQuiz(ctx context.Context, id uint) (err error) {
 		return err
 	}
 	if !qz.IsCollaborator(u.Email) {
-		return fmt.Errorf("The current user is not a collaborator on the given quiz")
+		return NotPermittedError
 	}
 	return hub.db.DeleteQuiz(id)
+}
+
+func (hub *QHub) AddQuestion(ctx context.Context, q *models.Question) (err error) {
+	u, err := getUserFromContext(ctx, hub.UserContextKey())
+	if err != nil {
+		return err
+	}
+
+	q.UserID = u.ID
+
+	qz, err := hub.db.GetQuiz(q.QuizID)
+	if err != nil {
+		return err
+	}
+	if !qz.IsCollaborator(u.Email) {
+		return NotPermittedError
+	}
+	qz.AddQuestion(q)
+	return hub.db.UpdateQuiz(qz)
 }

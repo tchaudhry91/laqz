@@ -16,6 +16,7 @@ func (s *QServer) routes() {
 	quizRoutes.Handle("/", s.AuthMW(s.CreateQuiz())).Methods("POST")
 	quizRoutes.Handle("/{id}/", s.AuthMW(s.GetQuiz())).Methods("GET")
 	quizRoutes.Handle("/{id}/", s.AuthMW(s.DeleteQuiz())).Methods("DELETE")
+	quizRoutes.Handle("/{id}/addQuestion", s.AuthMW(s.AddQuestion())).Methods("POST")
 	quizRoutes.Handle("/list/user/", s.AuthMW(s.GetMyQuizzes())).Methods("GET")
 }
 
