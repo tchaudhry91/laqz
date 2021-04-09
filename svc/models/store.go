@@ -94,7 +94,7 @@ func (db *QuizPGStore) GetAllQuizzes() (qzs []*Quiz, err error) {
 
 func (db *QuizPGStore) GetQuizzesByUser(email string) (qzs []*Quiz, err error) {
 	u := &User{}
-	err = db.client.Preload("Quizzes").Where("email = ?", email).First(u).Error
+	err = db.client.Preload("Quizzes.Tags").Preload("Quizzes.Collaborators").Preload("Quizzes").Where("email = ?", email).First(u).Error
 	qzs = u.Quizzes
 	return
 }
