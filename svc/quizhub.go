@@ -20,6 +20,7 @@ type QuizHub interface {
 	DeleteQuiz(ctx context.Context, id uint) (err error)
 	GetQuiz(ctx context.Context, id uint) (qz *models.Quiz, err error)
 	GetMyQuizzes(ctx context.Context) (qqz []*models.Quiz, err error)
+	GetPublicQuizzes(ctx context.Context) (qqz []*models.Quiz, err error)
 	AddQuestion(ctx context.Context, q *models.Question) (err error)
 }
 
@@ -111,6 +112,11 @@ func (hub *QHub) GetMyQuizzes(ctx context.Context) (qqz []*models.Quiz, err erro
 		return qqz, err
 	}
 	qqz, err = hub.db.GetQuizzesByUser(u.Email)
+	return
+}
+
+func (hub *QHub) GetPublicQuizzes(ctx context.Context) (qqz []*models.Quiz, err error) {
+	qqz, err = hub.db.GetAllPublicQuizzes()
 	return
 }
 

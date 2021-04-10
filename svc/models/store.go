@@ -15,7 +15,7 @@ type QuizStore interface {
 	GetQuizByName(name string) (qz *Quiz, err error)
 	GetQuiz(id uint) (qz *Quiz, err error)
 	GetPreloadedQuiz(id uint) (qz *Quiz, err error)
-	GetAllQuizzes() (qzs []*Quiz, err error)
+	GetAllPublicQuizzes() (qzs []*Quiz, err error)
 	GetQuizzesByUser(email string) (qzs []*Quiz, err error)
 	UpdateQuiz(qz *Quiz) error
 	CreateQuestion(q *Question) error
@@ -86,9 +86,9 @@ func (db *QuizPGStore) GetPreloadedQuiz(id uint) (qz *Quiz, err error) {
 	return
 }
 
-func (db *QuizPGStore) GetAllQuizzes() (qzs []*Quiz, err error) {
+func (db *QuizPGStore) GetAllPublicQuizzes() (qzs []*Quiz, err error) {
 	qzs = make([]*Quiz, 0)
-	err = db.client.Find(qzs).Error
+	err = db.client.Preload("Collaborators").Preload("Tags").Where("private = false").Find(&qzs).Error
 	return
 }
 

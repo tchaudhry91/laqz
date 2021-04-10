@@ -78,6 +78,28 @@ func (s *QServer) GetQuiz() http.HandlerFunc {
 	}
 }
 
+func (s *QServer) GetQuizzes() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		type Response struct {
+			Quizzes []*models.Quiz `json:"quizzes,omitempty"`
+		}
+		resp := Response{
+			Quizzes: []*models.Quiz{},
+		}
+		qqz, err := s.hub.GetPublicQuizzes(req.Context())
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				s.respond(w, req, resp, http.StatusOK, nil)
+				return
+			}
+			s.respond(w, req, nil, http.StatusInternalServerError, err)
+			return
+		}
+		resp.Quizzes = qqz
+		s.respond(w, req, resp, http.StatusOK, nil)
+	}
+}
+
 func (s *QServer) GetMyQuizzes() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		type Response struct {
