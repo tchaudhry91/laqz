@@ -14,7 +14,7 @@ func (s *QServer) routes() {
 	// Quiz Routes
 	quizRoutes := s.router.PathPrefix("/quiz").Subrouter()
 	quizRoutes.Handle("/", s.AuthMW(s.CreateQuiz())).Methods("POST")
-	quizRoutes.Handle("/{id}/", s.AuthMW(s.GetQuiz())).Methods("GET")
+	quizRoutes.Handle("/{id}/", s.OptionalAuthMW(s.GetQuiz())).Methods("GET")
 	quizRoutes.Handle("/{id}/", s.AuthMW(s.DeleteQuiz())).Methods("DELETE")
 	quizRoutes.Handle("/{id}/toggleVisibility", s.AuthMW(s.ToggleQuizPrivacy())).Methods("PATCH")
 	quizRoutes.Handle("/{id}/addQuestion", s.AuthMW(s.AddQuestion())).Methods("POST")

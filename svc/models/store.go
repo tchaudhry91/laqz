@@ -76,7 +76,7 @@ func (db *QuizPGStore) GetQuizByName(name string) (qz *Quiz, err error) {
 
 func (db *QuizPGStore) GetQuiz(id uint) (qz *Quiz, err error) {
 	qz = &Quiz{}
-	err = db.client.Preload("Collaborators").Preload("Tags").Where("id = ?", id).First(qz).Error
+	err = db.client.Preload("Collaborators").Preload("Tags").Preload("Questions").Where("id = ?", id).First(qz).Error
 	return
 }
 

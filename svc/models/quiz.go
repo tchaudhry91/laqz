@@ -4,11 +4,11 @@ import "gorm.io/gorm"
 
 type Quiz struct {
 	gorm.Model
-	Name          string      `gorm:"uniqueIndex" json:"name,omitempty"`
-	Private       bool        `json:"private,omitempty"`
-	Collaborators []*User     `gorm:"many2many:quiz_collaborators" json:"collaborators,omitempty"`
-	Tags          []*Tag      `gorm:"many2many:quiz_tags" json:"tags,omitempty"`
-	Questions     []*Question `gorm:"many2many:quiz_questions" json:"questions,omitempty"`
+	Name          string      `gorm:"uniqueIndex" json:"name"`
+	Private       bool        `json:"private"`
+	Collaborators []*User     `gorm:"many2many:quiz_collaborators" json:"collaborators"`
+	Tags          []*Tag      `gorm:"many2many:quiz_tags" json:"tags"`
+	Questions     []*Question `gorm:"many2many:quiz_questions" json:"questions"`
 }
 
 // NewQuiz is used to initialize an empty Quiz

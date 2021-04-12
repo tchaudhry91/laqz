@@ -10,6 +10,7 @@ import (
 )
 
 var NotPermittedError = errors.New("User is not permitted for the following action")
+var UserNotFound = errors.New("User not found")
 
 type contextKey string
 
@@ -40,7 +41,7 @@ func getUserFromContext(ctx context.Context, key contextKey) (u *models.User, er
 	if user != nil {
 		return user.(*models.User), nil
 	}
-	return nil, fmt.Errorf("User not found")
+	return nil, UserNotFound
 }
 
 func (hub *QHub) UserContextKey() contextKey {
@@ -98,7 +99,11 @@ func (hub *QHub) CreateQuiz(ctx context.Context, name string, tags []string) (qz
 func (hub *QHub) GetQuiz(ctx context.Context, id uint) (qz *models.Quiz, err error) {
 	u, err := getUserFromContext(ctx, hub.UserContextKey())
 	if err != nil {
-		return qz, err
+		if !errors.Is(err, UserNotFound) {
+			return qz, err
+		}
+		// Use Guest User
+		u = &models.User{}
 	}
 	qz, err = hub.db.GetQuiz(id)
 	if !qz.CanView(u.Email) {
