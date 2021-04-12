@@ -122,6 +122,29 @@ func (s *QServer) GetMyQuizzes() http.HandlerFunc {
 	}
 }
 
+func (s *QServer) ToggleQuizPrivacy() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		type Request struct {
+			QuizID uint `json:"quiz_id,omitempty"`
+		}
+		r := Request{}
+
+		defer req.Body.Close()
+
+		err := json.NewDecoder(req.Body).Decode(&r)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, err)
+			return
+		}
+		err = s.hub.ToggleQuizPrivacy(req.Context(), r.QuizID)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusInternalServerError, err)
+			return
+		}
+		s.respond(w, req, nil, http.StatusNoContent, nil)
+	}
+}
+
 func (s *QServer) DeleteQuiz() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		type Request struct {

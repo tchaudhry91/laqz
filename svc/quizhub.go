@@ -22,6 +22,7 @@ type QuizHub interface {
 	GetMyQuizzes(ctx context.Context) (qqz []*models.Quiz, err error)
 	GetPublicQuizzes(ctx context.Context) (qqz []*models.Quiz, err error)
 	AddQuestion(ctx context.Context, q *models.Question) (err error)
+	ToggleQuizPrivacy(ctx context.Context, id uint) (err error)
 }
 
 type QHub struct {
@@ -106,6 +107,19 @@ func (hub *QHub) GetQuiz(ctx context.Context, id uint) (qz *models.Quiz, err err
 	return
 }
 
+func (hub *QHub) ToggleQuizPrivacy(ctx context.Context, id uint) (err error) {
+	u, err := getUserFromContext(ctx, hub.UserContextKey())
+	if err != nil {
+		return err
+	}
+	qz, err := hub.db.GetQuiz(id)
+	if !qz.IsCollaborator(u.Email) {
+		return NotPermittedError
+	}
+	qz.TogglePrivacy()
+	return hub.db.UpdateQuiz(qz)
+}
+
 func (hub *QHub) GetMyQuizzes(ctx context.Context) (qqz []*models.Quiz, err error) {
 	u, err := getUserFromContext(ctx, hub.UserContextKey())
 	if err != nil {
@@ -137,6 +151,10 @@ func (hub *QHub) DeleteQuiz(ctx context.Context, id uint) (err error) {
 
 func (hub *QHub) AddQuestion(ctx context.Context, q *models.Question) (err error) {
 	u, err := getUserFromContext(ctx, hub.UserContextKey())
+	if err != nil {
+		return err
+	}
+	u, err = hub.db.GetUserByEmail(u.Email)
 	if err != nil {
 		return err
 	}

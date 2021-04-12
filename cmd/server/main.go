@@ -18,7 +18,7 @@ import (
 func main() {
 	fs := flag.NewFlagSet("qhub", flag.ExitOnError)
 	var (
-		listenAddr      = fs.String("listen-addr", "localhost:8080", "listen address")
+		listenAddr      = fs.String("listen-addr", "0.0.0.0:8080", "listen address")
 		dbDSN           = fs.String("db-dsn", "postgresql://postgres:password@127.0.0.1:42261/laqz?sslmode=disable", "Database Connection String")
 		firebaseKeyFile = fs.String("firebase-admin-key", "", "Firebase Admin Private Key")
 	)
