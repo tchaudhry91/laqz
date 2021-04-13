@@ -20,6 +20,12 @@ func (s *QServer) routes() {
 	quizRoutes.Handle("/{id}/addQuestion", s.AuthMW(s.AddQuestion())).Methods("POST")
 	quizRoutes.Handle("/list/user/", s.AuthMW(s.GetMyQuizzes())).Methods("GET")
 	quizRoutes.Handle("/list", s.GetQuizzes()).Methods("GET")
+
+	// PlaySessionRoutes
+	psRoutes := s.router.PathPrefix("/ps").Subrouter()
+	psRoutes.Handle("/create", s.AuthMW(s.CreatePS())).Methods("POST")
+	psRoutes.Handle("/{code}/", s.AuthMW(s.GetPS())).Methods("GET")
+	psRoutes.Handle("/join/{code}/", s.AuthMW(s.JoinPS())).Methods("POST")
 }
 
 // CorsMW is a middleware to add CORS header to the response

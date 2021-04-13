@@ -44,12 +44,19 @@ func (s *QServer) Shutdown(ctx context.Context) error {
 // respond is a internal utility to set proper HTTP responses
 func (s *QServer) respond(w http.ResponseWriter, req *http.Request, data interface{}, statusCode int, err error) {
 	w.WriteHeader(statusCode)
-	s.logger.Log("path", req.URL.Path, "method", req.Method, "err", err, "code", statusCode)
 	if data != nil {
 		err := json.NewEncoder(w).Encode(data)
 		if err != nil {
 			s.logger.Log("path", req.URL.Path, "method", req.Method, "err", err, "code", statusCode)
 		}
+		return
+	}
+	if err != nil {
+		err := json.NewEncoder(w).Encode(struct{ Err string }{Err: err.Error()})
+		if err != nil {
+			s.logger.Log("path", req.URL.Path, "method", req.Method, "err", err, "code", statusCode)
+		}
+		return
 	}
 }
 

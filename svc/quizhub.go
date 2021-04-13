@@ -24,15 +24,20 @@ type QuizHub interface {
 	GetPublicQuizzes(ctx context.Context) (qqz []*models.Quiz, err error)
 	AddQuestion(ctx context.Context, q *models.Question) (err error)
 	ToggleQuizPrivacy(ctx context.Context, id uint) (err error)
+
+	PlaySessionSVC
 }
 
 type QHub struct {
+	*PlaySessionSvc
 	db models.QuizStore
 }
 
 func NewQHub(db models.QuizStore) *QHub {
+	psSvc := NewPlaySessionSvc(db)
 	return &QHub{
-		db: db,
+		psSvc,
+		db,
 	}
 }
 

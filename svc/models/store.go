@@ -22,6 +22,10 @@ type QuizStore interface {
 	GetQuestion(id uint) (q *Question, err error)
 	GetQuestionsByQuiz(qzID uint) (qq []*Question, err error)
 	GetTagByName(name string) (t *Tag, err error)
+	CreatePlaySession(s *PlaySession) error
+	UpdatePlaySession(s *PlaySession) error
+	GetPlaySession(code uint) (s *PlaySession, err error)
+	DeletePlaySession(code uint) (err error)
 }
 
 type QuizPGStore struct {
@@ -46,7 +50,8 @@ func (db *QuizPGStore) Migrate() error {
 		&User{},
 		&Question{},
 		&Quiz{},
-		&Buzz{},
+		&PlaySession{},
+		&Team{},
 	)
 }
 
@@ -134,4 +139,22 @@ func (db *QuizPGStore) GetTagByName(name string) (t *Tag, err error) {
 	t = &Tag{}
 	err = db.client.Where("name = ?", name).First(t).Error
 	return
+}
+
+func (db *QuizPGStore) CreatePlaySession(s *PlaySession) error {
+	return db.client.Create(s).Error
+}
+
+func (db *QuizPGStore) GetPlaySession(code uint) (s *PlaySession, err error) {
+	s = &PlaySession{}
+	err = db.client.Preload("Quiz").Preload("Users").Preload("Teams").Preload("Teams.Users").Where("code = ?", code).First(s).Error
+	return
+}
+
+func (db *QuizPGStore) DeletePlaySession(code uint) (err error) {
+	return db.client.Where("code = ?", code).Delete(&PlaySession{}).Error
+}
+
+func (db *QuizPGStore) UpdatePlaySession(s *PlaySession) error {
+	return db.client.Save(s).Error
 }
