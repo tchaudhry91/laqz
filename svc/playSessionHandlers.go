@@ -85,7 +85,73 @@ func (s *QServer) JoinPS() http.HandlerFunc {
 			return
 		}
 		r.Code = uint(id)
-		s.hub.AddUserToPS(req.Context(), r.Code)
+		err = s.hub.AddUserToPS(req.Context(), r.Code)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusInternalServerError, err)
+			return
+		}
+		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.respond(w, req, nil, http.StatusNoContent, nil)
+	}
+}
+
+func (s *QServer) AddTeam() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		type Request struct {
+			Code     uint   `json:"code,omitempty"`
+			TeamName string `json:"team_name,omitempty"`
+		}
+		r := Request{}
+		defer req.Body.Close()
+		err := json.NewDecoder(req.Body).Decode(&r)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, err)
+			return
+		}
+		params := mux.Vars(req)
+		idStr := params["code"]
+		var id int
+		id, err = strconv.Atoi(idStr)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, fmt.Errorf("Bad Code supplied"))
+			return
+		}
+		r.Code = uint(id)
+		team := models.NewTeam(r.TeamName)
+		err = s.hub.AddTeamToPS(req.Context(), r.Code, team)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusInternalServerError, err)
+			return
+		}
+		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.respond(w, req, nil, http.StatusNoContent, nil)
+	}
+}
+
+func (s *QServer) AddUserToTeam() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		type Request struct {
+			Code     uint   `json:"code,omitempty"`
+			TeamName string `json:"team_name,omitempty"`
+			Email    string `json:"email,omitempty"`
+		}
+		r := Request{}
+		defer req.Body.Close()
+		err := json.NewDecoder(req.Body).Decode(&r)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, err)
+			return
+		}
+		params := mux.Vars(req)
+		idStr := params["code"]
+		var id int
+		id, err = strconv.Atoi(idStr)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, fmt.Errorf("Bad Code supplied"))
+			return
+		}
+		r.Code = uint(id)
+		err = s.hub.AddUserToTeam(req.Context(), r.Code, r.TeamName, r.Email)
 		if err != nil {
 			s.respond(w, req, nil, http.StatusInternalServerError, err)
 			return

@@ -26,6 +26,8 @@ func (s *QServer) routes() {
 	psRoutes.Handle("/create", s.AuthMW(s.CreatePS())).Methods("POST")
 	psRoutes.Handle("/{code}/", s.AuthMW(s.GetPS())).Methods("GET")
 	psRoutes.Handle("/join/{code}", s.AuthMW(s.JoinPS())).Methods("POST")
+	psRoutes.Handle("/{code}/addTeam", s.AuthMW(s.AddTeam())).Methods("POST")
+	psRoutes.Handle("/{code}/assignTeamToUser", s.AuthMW(s.AddUserToTeam())).Methods("POST")
 	psRoutes.Handle("/ws/{code}", s.WebSocketPS())
 }
 

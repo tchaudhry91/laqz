@@ -8,3 +8,9 @@ type Team struct {
 	Users  []*User `gorm:"many2many:user_teams" json:"users"`
 	Points uint    `json:"points"`
 }
+
+func NewTeam(name string) *Team {
+	return &Team{
+		Name: name,
+	}
+}

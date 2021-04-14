@@ -10,6 +10,8 @@ type PlaySessionSVC interface {
 	InitNewPS(ctx context.Context, quizID uint) (s *models.PlaySession, err error)
 	StartPS(ctx context.Context, code uint) (err error)
 	AddUserToPS(ctx context.Context, code uint) (err error)
+	AddUserToTeam(ctx context.Context, code uint, teamName string, email string) (err error)
+	AddTeamToPS(ctx context.Context, code uint, team *models.Team) (err error)
 	GetPS(ctx context.Context, code uint) (s *models.PlaySession, err error)
 }
 
@@ -94,5 +96,37 @@ func (ps *PlaySessionSvc) AddUserToPS(ctx context.Context, code uint) (err error
 		return err
 	}
 	s.AddUser(u)
+	return ps.db.UpdatePlaySession(s)
+}
+
+func (ps *PlaySessionSvc) AddTeamToPS(ctx context.Context, code uint, t *models.Team) (err error) {
+	u, err := getUserFromContext(ctx, ps.UserContextKey())
+	if err != nil {
+		return err
+	}
+	s, err := ps.db.GetPlaySession(code)
+	if err != nil {
+		return err
+	}
+	if s.QuizMaster != u.Email {
+		return NotPermittedError
+	}
+	s.AddTeam(t)
+	return ps.db.UpdatePlaySession(s)
+}
+
+func (ps *PlaySessionSvc) AddUserToTeam(ctx context.Context, code uint, teamName string, email string) (err error) {
+	u, err := getUserFromContext(ctx, ps.UserContextKey())
+	if err != nil {
+		return err
+	}
+	s, err := ps.db.GetPlaySession(code)
+	if err != nil {
+		return err
+	}
+	if email != u.Email {
+		return NotPermittedError
+	}
+	s.AssignUserToTeam(teamName, email)
 	return ps.db.UpdatePlaySession(s)
 }
