@@ -25,7 +25,8 @@ func (s *QServer) routes() {
 	psRoutes := s.router.PathPrefix("/ps").Subrouter()
 	psRoutes.Handle("/create", s.AuthMW(s.CreatePS())).Methods("POST")
 	psRoutes.Handle("/{code}/", s.AuthMW(s.GetPS())).Methods("GET")
-	psRoutes.Handle("/join/{code}/", s.AuthMW(s.JoinPS())).Methods("POST")
+	psRoutes.Handle("/join/{code}", s.AuthMW(s.JoinPS())).Methods("POST")
+	psRoutes.Handle("/ws/{code}", s.WebSocketPS())
 }
 
 // CorsMW is a middleware to add CORS header to the response

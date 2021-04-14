@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/tchaudhry91/laqz/svc/models"
@@ -32,6 +33,8 @@ func (s *QServer) CreatePS() http.HandlerFunc {
 			s.respond(w, req, nil, http.StatusInternalServerError, err)
 			return
 		}
+		// Create a new wsHub for the playSession
+		s.wsHubs[ps.Code] = newHub()
 		resp := Response{}
 		resp.PlaySession = ps
 		s.respond(w, req, resp, http.StatusOK, nil)
@@ -87,6 +90,38 @@ func (s *QServer) JoinPS() http.HandlerFunc {
 			s.respond(w, req, nil, http.StatusInternalServerError, err)
 			return
 		}
+		s.wsHubs[r.Code].broadcast <- []byte("reload")
 		s.respond(w, req, nil, http.StatusNoContent, nil)
+	}
+}
+
+func (s *QServer) WebSocketPS() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		type Request struct {
+			Code uint `json:"code,omitempty"`
+		}
+		r := Request{}
+		params := mux.Vars(req)
+		idStr := params["code"]
+		var id int
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, fmt.Errorf("Bad Code supplied"))
+			return
+		}
+		r.Code = uint(id)
+		wsConn, err := s.wsUpgrader.Upgrade(w, req, nil)
+		if err != nil {
+			s.logger.Log("msg", "Failed to upgrade WS", "err", err)
+			return
+		}
+		c := &connection{send: make(chan []byte, 256), h: s.wsHubs[r.Code]}
+		c.h.addConnection(c)
+		defer c.h.removeConnection(c)
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go c.writer(&wg, wsConn)
+		wg.Wait()
+		wsConn.Close()
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"firebase.google.com/go/auth"
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 type QServer struct {
@@ -16,6 +17,8 @@ type QServer struct {
 	server     *http.Server
 	logger     log.Logger
 	authClient *auth.Client
+	wsUpgrader websocket.Upgrader
+	wsHubs     map[uint]*wsHub
 }
 
 func NewQServer(hub QuizHub, listenAddr string, logger log.Logger, authClient *auth.Client) *QServer {
@@ -25,6 +28,11 @@ func NewQServer(hub QuizHub, listenAddr string, logger log.Logger, authClient *a
 		hub:        hub,
 		router:     router,
 		logger:     logger,
+		wsUpgrader: websocket.Upgrader{CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+			ReadBufferSize: 1024, WriteBufferSize: 1024},
+		wsHubs: make(map[uint]*wsHub),
 	}
 	s.server = &http.Server{Addr: listenAddr, Handler: s.CorsMW()}
 	s.routes()
