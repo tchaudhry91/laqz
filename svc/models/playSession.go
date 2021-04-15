@@ -18,8 +18,9 @@ type PlaySession struct {
 	QuizID               uint
 	Quiz                 *Quiz     `json:"quiz"`
 	State                string    `json:"state"`
-	CurrentQuestionIndex int       `json:"-"`
+	CurrentQuestionIndex int       `json:"current_question_index"`
 	CurrentQuestion      *Question `gorm:"-" json:"current_question"`
+	CurrentAnswer        string    `json:"current_answer,omitempty"`
 	QuizMaster           string    `json:"quiz_master"`
 	Users                []*User   `gorm:"many2many:session_users" json:"users"`
 	Teams                []*Team   `gorm:"many2many:session_teams" json:"teams"`
@@ -50,12 +51,39 @@ func (s *PlaySession) UpdateQuestion(q *Question) {
 	s.CurrentQuestion = q
 }
 
+func (s *PlaySession) SetCurrentAnswer(answer string) {
+	s.CurrentAnswer = answer
+}
+
+func (s *PlaySession) ClearCurrentAnswer() {
+	s.CurrentAnswer = ""
+}
+
 func (s *PlaySession) SetFinished() {
 	s.State = StateFinished
 }
 
+func (s *PlaySession) AddTeamPoints(points int, teamName string) (err error) {
+	var targetTeam *Team
+	for i := range s.Teams {
+		if s.Teams[i].Name == teamName {
+			targetTeam = s.Teams[i]
+			break
+		}
+	}
+	if targetTeam == nil {
+		return fmt.Errorf("Team not found")
+	}
+	targetTeam.AddPoints(points)
+	return nil
+}
+
 func (s *PlaySession) SetInProgress() {
 	s.State = StateInProgress
+}
+
+func (s *PlaySession) AwardPoints(points int, teamName string) {
+
 }
 
 func (s *PlaySession) AssignUserToTeam(teamName string, email string) (err error) {

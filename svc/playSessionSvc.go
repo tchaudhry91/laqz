@@ -12,7 +12,11 @@ type PlaySessionSVC interface {
 	AddUserToPS(ctx context.Context, code uint) (err error)
 	AddUserToTeam(ctx context.Context, code uint, teamName string, email string) (err error)
 	AddTeamToPS(ctx context.Context, code uint, team *models.Team) (err error)
+	IncrementPSQuestion(ctx context.Context, code uint) (err error)
+	DecrementPSQuestion(ctx context.Context, code uint) (err error)
+	RevealPSCurrentAnswer(ctx context.Context, code uint) (err error)
 	GetPS(ctx context.Context, code uint) (s *models.PlaySession, err error)
+	UpdateTeamPoints(ctx context.Context, code uint, points int, teamName string) (err error)
 }
 
 type PlaySessionSvc struct {
@@ -69,17 +73,115 @@ func (ps *PlaySessionSvc) StartPS(ctx context.Context, code uint) (err error) {
 	}
 	s.SetInProgress()
 
-	// SetQuestion
+	return ps.db.UpdatePlaySession(s)
+}
+
+func (ps *PlaySessionSvc) IncrementPSQuestion(ctx context.Context, code uint) (err error) {
+	u, err := getUserFromContext(ctx, ps.UserContextKey())
+	if err != nil {
+		return err
+	}
+	s, err := ps.db.GetPlaySession(code)
+	if err != nil {
+		return err
+	}
+	if s.QuizMaster != u.Email {
+		return NotPermittedError
+	}
+	// Increment Question
 	qqs, err := ps.db.GetQuestionsByQuiz(s.Quiz.ID)
 	if err != nil {
 		return err
 	}
+	if s.CurrentQuestionIndex >= len(qqs)-1 {
+		s.SetFinished()
+	}
+	if s.CurrentQuestionIndex < len(qqs)-1 {
+		s.CurrentQuestionIndex += 1
+	}
 	s.UpdateQuestion(qqs[s.CurrentQuestionIndex])
+	s.ClearCurrentAnswer()
+	return ps.db.UpdatePlaySession(s)
+}
+
+func (ps *PlaySessionSvc) DecrementPSQuestion(ctx context.Context, code uint) (err error) {
+	u, err := getUserFromContext(ctx, ps.UserContextKey())
+	if err != nil {
+		return err
+	}
+	s, err := ps.db.GetPlaySession(code)
+	if err != nil {
+		return err
+	}
+	if s.QuizMaster != u.Email {
+		return NotPermittedError
+	}
+	// Increment Question
+	qqs, err := ps.db.GetQuestionsByQuiz(s.Quiz.ID)
+	if err != nil {
+		return err
+	}
+	if s.CurrentQuestionIndex > 0 {
+		s.CurrentQuestionIndex -= 1
+	}
+	s.UpdateQuestion(qqs[s.CurrentQuestionIndex])
+	s.ClearCurrentAnswer()
+	return ps.db.UpdatePlaySession(s)
+}
+
+func (ps *PlaySessionSvc) UpdateTeamPoints(ctx context.Context, code uint, points int, teamName string) (err error) {
+	u, err := getUserFromContext(ctx, ps.UserContextKey())
+	if err != nil {
+		return err
+	}
+	s, err := ps.db.GetPlaySession(code)
+	if err != nil {
+		return err
+	}
+	if s.QuizMaster != u.Email {
+		return NotPermittedError
+	}
+	// Award Points
+	err = s.AddTeamPoints(points, teamName)
+	if err != nil {
+		return err
+	}
+
+	return ps.db.UpdatePlaySession(s)
+}
+
+func (ps *PlaySessionSvc) RevealPSCurrentAnswer(ctx context.Context, code uint) (err error) {
+	u, err := getUserFromContext(ctx, ps.UserContextKey())
+	if err != nil {
+		return err
+	}
+	s, err := ps.db.GetPlaySession(code)
+	if err != nil {
+		return err
+	}
+	if s.QuizMaster != u.Email {
+		return NotPermittedError
+	}
+	// Return Answer
+	qqs, err := ps.db.GetQuestionsByQuiz(s.Quiz.ID)
+	if err != nil {
+		return err
+	}
+	s.SetCurrentAnswer(qqs[s.CurrentQuestionIndex].Answer)
 	return ps.db.UpdatePlaySession(s)
 }
 
 func (ps *PlaySessionSvc) GetPS(ctx context.Context, code uint) (s *models.PlaySession, err error) {
-	return ps.db.GetPlaySession(code)
+	s, err = ps.db.GetPlaySession(code)
+	// SetQuestion if needed
+	if s.State == models.StateInProgress || s.State == models.StateFinished {
+		qqs, err := ps.db.GetQuestionsByQuiz(s.Quiz.ID)
+		if err != nil {
+			return s, err
+		}
+		s.UpdateQuestion(qqs[s.CurrentQuestionIndex])
+	}
+	return
 }
 
 func (ps *PlaySessionSvc) AddUserToPS(ctx context.Context, code uint) (err error) {
