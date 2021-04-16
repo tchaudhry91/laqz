@@ -3,7 +3,7 @@ version: "3"
 tasks:
     build:
         cmds:
-            - CGO_ENABLED=0 go build -o laqz ./cmd/server
+            - GOOS=linux CGO_ENABLED=0 go build -o laqz ./cmd/server
     build-run:
         cmds:
             - task: build
