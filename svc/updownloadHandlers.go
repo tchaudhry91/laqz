@@ -31,6 +31,7 @@ func (s *QServer) UploadFile() http.HandlerFunc {
 		file, handler, err := r.FormFile("asset")
 		if err != nil {
 			s.respond(w, r, nil, http.StatusInternalServerError, nil)
+			fmt.Println(err)
 			return
 		}
 		s.logger.Log("msg", "uploading file", "name", handler.Filename)
@@ -40,19 +41,21 @@ func (s *QServer) UploadFile() http.HandlerFunc {
 		// byte array
 		fileBytes, err := ioutil.ReadAll(file)
 		if err != nil {
+			fmt.Println(err)
 			s.respond(w, r, nil, http.StatusInternalServerError, nil)
 		}
 
 		rand.Seed(time.Now().UnixNano())
 		asset_name := randSeq(15)
 
-		err = ioutil.WriteFile(filepath.Join(s.fileUploadDirectory, asset_name, filepath.Ext(handler.Filename)), fileBytes, 0644)
+		err = ioutil.WriteFile(filepath.Join(s.fileUploadDirectory, asset_name+filepath.Ext(handler.Filename)), fileBytes, 0644)
 		if err != nil {
+			fmt.Println(err)
 			s.respond(w, r, nil, http.StatusInternalServerError, nil)
 			return
 		}
 
 		// return that we have successfully uploaded our file!
-		s.respond(w, r, map[string]string{"url": fmt.Sprintf("%s/uploads/%s", s.externalURL, asset_name)}, http.StatusOK, nil)
+		s.respond(w, r, map[string]string{"url": fmt.Sprintf("%s/uploads/%s", s.externalURL, asset_name+filepath.Ext(handler.Filename))}, http.StatusOK, nil)
 	}
 }
