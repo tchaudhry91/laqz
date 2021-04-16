@@ -18,9 +18,11 @@ import (
 func main() {
 	fs := flag.NewFlagSet("qhub", flag.ExitOnError)
 	var (
-		listenAddr      = fs.String("listen-addr", "0.0.0.0:8080", "listen address")
-		dbDSN           = fs.String("db-dsn", "postgresql://postgres:password@127.0.0.1:42261/laqz?sslmode=disable", "Database Connection String")
-		firebaseKeyFile = fs.String("firebase-admin-key", "", "Firebase Admin Private Key")
+		listenAddr          = fs.String("listen-addr", "0.0.0.0:8080", "listen address")
+		dbDSN               = fs.String("db-dsn", "postgresql://postgres:password@127.0.0.1:42261/laqz?sslmode=disable", "Database Connection String")
+		firebaseKeyFile     = fs.String("firebase-admin-key", "", "Firebase Admin Private Key")
+		fileUploadDirectory = fs.String("file-upload-dir", "/app/uploads", "Place to put uploaded assets")
+		externalURL         = fs.String("external-url", "https://laqz-bk.tux-sudo.com", "External URL for uploaded assets")
 	)
 
 	ff.Parse(fs, os.Args[1:],
@@ -53,7 +55,7 @@ func main() {
 		panic(err)
 	}
 
-	server := svc.NewQServer(hub, *listenAddr, logger, authClient)
+	server := svc.NewQServer(hub, *listenAddr, logger, authClient, *fileUploadDirectory, *externalURL)
 	go func() {
 		logger.Log("msg", "Starting server..", "listenAddr", *listenAddr)
 		err = server.Start()

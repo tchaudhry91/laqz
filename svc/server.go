@@ -12,16 +12,18 @@ import (
 )
 
 type QServer struct {
-	hub        QuizHub
-	router     *mux.Router
-	server     *http.Server
-	logger     log.Logger
-	authClient *auth.Client
-	wsUpgrader websocket.Upgrader
-	wsHubs     map[uint]*wsHub
+	hub                 QuizHub
+	router              *mux.Router
+	server              *http.Server
+	logger              log.Logger
+	authClient          *auth.Client
+	wsUpgrader          websocket.Upgrader
+	externalURL         string
+	fileUploadDirectory string
+	wsHubs              map[uint]*wsHub
 }
 
-func NewQServer(hub QuizHub, listenAddr string, logger log.Logger, authClient *auth.Client) *QServer {
+func NewQServer(hub QuizHub, listenAddr string, logger log.Logger, authClient *auth.Client, fileUploadDirectory string, externalURL string) *QServer {
 	router := mux.NewRouter()
 	s := &QServer{
 		authClient: authClient,
@@ -32,7 +34,9 @@ func NewQServer(hub QuizHub, listenAddr string, logger log.Logger, authClient *a
 			return true
 		},
 			ReadBufferSize: 1024, WriteBufferSize: 1024},
-		wsHubs: make(map[uint]*wsHub),
+		wsHubs:              make(map[uint]*wsHub),
+		externalURL:         externalURL,
+		fileUploadDirectory: fileUploadDirectory,
 	}
 	s.server = &http.Server{Addr: listenAddr, Handler: s.CorsMW()}
 	s.routes()

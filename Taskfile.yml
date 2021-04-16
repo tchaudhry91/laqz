@@ -11,5 +11,6 @@ tasks:
     deploy:
         cmds:
             - task: build
+            - ssh root@laqz-bk.tux-sudo.com -a systemctl stop laqz
             - scp laqz laqz-bk.tux-sudo.com:/app/
             - ssh root@laqz-bk.tux-sudo.com -a systemctl restart laqz
