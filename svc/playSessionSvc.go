@@ -142,12 +142,13 @@ func (ps *PlaySessionSvc) UpdateTeamPoints(ctx context.Context, code uint, point
 		return NotPermittedError
 	}
 	// Award Points
-	err = s.AddTeamPoints(points, teamName)
+	t, err := s.GetTeam(teamName)
 	if err != nil {
 		return err
 	}
+	t.AddPoints(points)
 
-	return ps.db.UpdatePlaySession(s)
+	return ps.db.UpdateTeam(t)
 }
 
 func (ps *PlaySessionSvc) RevealPSCurrentAnswer(ctx context.Context, code uint) (err error) {

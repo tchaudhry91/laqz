@@ -26,6 +26,7 @@ type QuizStore interface {
 	UpdatePlaySession(s *PlaySession) error
 	GetPlaySession(code uint) (s *PlaySession, err error)
 	DeletePlaySession(code uint) (err error)
+	UpdateTeam(t *Team) error
 }
 
 type QuizPGStore struct {
@@ -157,4 +158,8 @@ func (db *QuizPGStore) DeletePlaySession(code uint) (err error) {
 
 func (db *QuizPGStore) UpdatePlaySession(s *PlaySession) error {
 	return db.client.Save(s).Error
+}
+
+func (db *QuizPGStore) UpdateTeam(t *Team) error {
+	return db.client.Save(t).Error
 }

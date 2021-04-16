@@ -63,27 +63,35 @@ func (s *PlaySession) SetFinished() {
 	s.State = StateFinished
 }
 
+func (s *PlaySession) GetTeam(name string) (t *Team, err error) {
+	for i := range s.Teams {
+		if s.Teams[i].Name == name {
+			return s.Teams[i], nil
+		}
+	}
+	return nil, fmt.Errorf("Team not found")
+
+}
+
 func (s *PlaySession) AddTeamPoints(points int, teamName string) (err error) {
-	var targetTeam *Team
+	targetTeamIndex := 0
+	found := false
 	for i := range s.Teams {
 		if s.Teams[i].Name == teamName {
-			targetTeam = s.Teams[i]
+			targetTeamIndex = i
+			found = true
 			break
 		}
 	}
-	if targetTeam == nil {
+	if !found {
 		return fmt.Errorf("Team not found")
 	}
-	targetTeam.AddPoints(points)
+	s.Teams[targetTeamIndex].AddPoints(points)
 	return nil
 }
 
 func (s *PlaySession) SetInProgress() {
 	s.State = StateInProgress
-}
-
-func (s *PlaySession) AwardPoints(points int, teamName string) {
-
 }
 
 func (s *PlaySession) AssignUserToTeam(teamName string, email string) (err error) {

@@ -46,6 +46,12 @@ func (s *QServer) Start() error {
 
 // Shutdown gracefully terminates the server
 func (s *QServer) Shutdown(ctx context.Context) error {
+	// Drop all websockets
+	for i := range s.wsHubs {
+		for c := range s.wsHubs[i].connections {
+			s.wsHubs[i].removeConnection(c)
+		}
+	}
 	return s.server.Shutdown(ctx)
 }
 
