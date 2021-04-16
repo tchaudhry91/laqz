@@ -28,6 +28,7 @@ func (s *QServer) routes() {
 	psRoutes.Handle("/join/{code}", s.AuthMW(s.JoinPS())).Methods("POST")
 	psRoutes.Handle("/{code}/addTeam", s.AuthMW(s.AddTeam())).Methods("POST")
 	psRoutes.Handle("/{code}/start", s.AuthMW(s.StartPS())).Methods("POST")
+	psRoutes.Handle("/{code}/end", s.AuthMW(s.EndPS())).Methods("POST")
 	psRoutes.Handle("/{code}/next", s.AuthMW(s.IncrementPSQuestion())).Methods("POST")
 	psRoutes.Handle("/{code}/prev", s.AuthMW(s.DecrementPSQuestion())).Methods("POST")
 	psRoutes.Handle("/{code}/reveal", s.AuthMW(s.RevealPSCurrentAnswer())).Methods("POST")

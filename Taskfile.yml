@@ -1,0 +1,15 @@
+version: "3"
+
+tasks:
+    build:
+        cmds:
+            - CGO_ENABLED=0 go build -o laqz ./cmd/server
+    build-run:
+        cmds:
+            - task: build
+            - ./laqz -firebase-admin-key ~/.credentials/laqz-firebase.json
+    deploy:
+        cmds:
+            - task: build
+            - scp laqz laqz-bk.tux-sudo.com:/app/
+            - ssh root@laqz-bk.tux-sudo.com -a systemctl restart laqz

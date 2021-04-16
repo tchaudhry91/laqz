@@ -17,6 +17,7 @@ type PlaySessionSVC interface {
 	RevealPSCurrentAnswer(ctx context.Context, code uint) (err error)
 	GetPS(ctx context.Context, code uint) (s *models.PlaySession, err error)
 	UpdateTeamPoints(ctx context.Context, code uint, points int, teamName string) (err error)
+	EndPlaySession(ctx context.Context, code uint) (err error)
 }
 
 type PlaySessionSvc struct {
@@ -72,6 +73,23 @@ func (ps *PlaySessionSvc) StartPS(ctx context.Context, code uint) (err error) {
 		return NotPermittedError
 	}
 	s.SetInProgress()
+
+	return ps.db.UpdatePlaySession(s)
+}
+
+func (ps *PlaySessionSvc) EndPlaySession(ctx context.Context, code uint) (err error) {
+	u, err := getUserFromContext(ctx, ps.UserContextKey())
+	if err != nil {
+		return err
+	}
+	s, err := ps.db.GetPlaySession(code)
+	if err != nil {
+		return err
+	}
+	if s.QuizMaster != u.Email {
+		return NotPermittedError
+	}
+	s.SetFinished()
 
 	return ps.db.UpdatePlaySession(s)
 }

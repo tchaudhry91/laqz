@@ -198,6 +198,44 @@ func (s *QServer) StartPS() http.HandlerFunc {
 	}
 }
 
+func (s *QServer) EndPS() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		type Request struct {
+			Code uint `json:"code,omitempty"`
+		}
+		r := Request{}
+		params := mux.Vars(req)
+		idStr := params["code"]
+		var id int
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, fmt.Errorf("Bad Code supplied"))
+			return
+		}
+		r.Code = uint(id)
+		err = s.hub.StartPS(req.Context(), r.Code)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusInternalServerError, err)
+			return
+		}
+		if _, ok := s.wsHubs[r.Code]; !ok {
+			s.respond(w, req, nil, http.StatusNoContent, nil)
+			return
+		}
+		s.wsHubs[r.Code].broadcast <- []byte("reload")
+
+		// CleanUp Connections and delete Hub
+		for c := range s.wsHubs[r.Code].connections {
+			s.logger.Log("msg", "Closing WS Connections", "ps-code", r.Code)
+			s.wsHubs[r.Code].removeConnection(c)
+		}
+		delete(s.wsHubs, r.Code)
+		s.logger.Log("msg", "Deleted Websocket Session", "ps-code", r.Code)
+
+		s.respond(w, req, nil, http.StatusNoContent, nil)
+	}
+}
+
 func (s *QServer) IncrementPSQuestion() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		type Request struct {
