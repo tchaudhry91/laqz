@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/tchaudhry91/laqz/svc/models"
@@ -213,7 +214,7 @@ func (s *QServer) EndPS() http.HandlerFunc {
 			return
 		}
 		r.Code = uint(id)
-		err = s.hub.StartPS(req.Context(), r.Code)
+		err = s.hub.EndPlaySession(req.Context(), r.Code)
 		if err != nil {
 			s.respond(w, req, nil, http.StatusInternalServerError, err)
 			return
@@ -223,6 +224,8 @@ func (s *QServer) EndPS() http.HandlerFunc {
 			return
 		}
 		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		// Give it a few seconds
+		time.Sleep(3 * time.Second)
 
 		// CleanUp Connections and delete Hub
 		for c := range s.wsHubs[r.Code].connections {
@@ -367,10 +370,13 @@ func (s *QServer) WebSocketPS() http.HandlerFunc {
 		var id int
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			s.respond(w, req, nil, http.StatusBadRequest, fmt.Errorf("Bad Code supplied"))
 			return
 		}
 		r.Code = uint(id)
+		if _, ok := s.wsHubs[r.Code]; !ok {
+			s.logger.Log("msg", "Attempted WS Connection to non-existant hub")
+			return
+		}
 		wsConn, err := s.wsUpgrader.Upgrade(w, req, nil)
 		if err != nil {
 			s.logger.Log("msg", "Failed to upgrade WS", "err", err)

@@ -111,9 +111,7 @@ func (ps *PlaySessionSvc) IncrementPSQuestion(ctx context.Context, code uint) (e
 	if err != nil {
 		return err
 	}
-	if s.CurrentQuestionIndex >= len(qqs)-1 {
-		s.SetFinished()
-	}
+
 	if s.CurrentQuestionIndex < len(qqs)-1 {
 		s.CurrentQuestionIndex += 1
 	}
