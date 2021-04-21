@@ -12,6 +12,11 @@ import (
 	"github.com/tchaudhry91/laqz/svc/models"
 )
 
+func (s *QServer) UserContextKey() contextKey {
+	var userContextKey = contextKey("user")
+	return userContextKey
+}
+
 func (s *QServer) CreatePS() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		type Request struct {
@@ -94,7 +99,7 @@ func (s *QServer) JoinPS() http.HandlerFunc {
 		if _, ok := s.wsHubs[r.Code]; !ok {
 			s.wsHubs[r.Code] = newHub()
 		}
-		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.wsHubs[r.Code].BroadcastReload()
 		s.respond(w, req, nil, http.StatusNoContent, nil)
 	}
 }
@@ -130,7 +135,7 @@ func (s *QServer) AddTeam() http.HandlerFunc {
 		if _, ok := s.wsHubs[r.Code]; !ok {
 			s.wsHubs[r.Code] = newHub()
 		}
-		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.wsHubs[r.Code].BroadcastReload()
 		s.respond(w, req, nil, http.StatusNoContent, nil)
 	}
 }
@@ -166,7 +171,7 @@ func (s *QServer) AddUserToTeam() http.HandlerFunc {
 		if _, ok := s.wsHubs[r.Code]; !ok {
 			s.wsHubs[r.Code] = newHub()
 		}
-		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.wsHubs[r.Code].BroadcastReload()
 		s.respond(w, req, nil, http.StatusNoContent, nil)
 	}
 }
@@ -194,7 +199,7 @@ func (s *QServer) StartPS() http.HandlerFunc {
 		if _, ok := s.wsHubs[r.Code]; !ok {
 			s.wsHubs[r.Code] = newHub()
 		}
-		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.wsHubs[r.Code].BroadcastReload()
 		s.respond(w, req, nil, http.StatusNoContent, nil)
 	}
 }
@@ -223,7 +228,7 @@ func (s *QServer) EndPS() http.HandlerFunc {
 			s.respond(w, req, nil, http.StatusNoContent, nil)
 			return
 		}
-		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.wsHubs[r.Code].BroadcastReload()
 		// Give it a few seconds
 		time.Sleep(3 * time.Second)
 
@@ -262,7 +267,7 @@ func (s *QServer) IncrementPSQuestion() http.HandlerFunc {
 		if _, ok := s.wsHubs[r.Code]; !ok {
 			s.wsHubs[r.Code] = newHub()
 		}
-		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.wsHubs[r.Code].BroadcastReload()
 		s.respond(w, req, nil, http.StatusNoContent, nil)
 	}
 }
@@ -290,7 +295,7 @@ func (s *QServer) DecrementPSQuestion() http.HandlerFunc {
 		if _, ok := s.wsHubs[r.Code]; !ok {
 			s.wsHubs[r.Code] = newHub()
 		}
-		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.wsHubs[r.Code].BroadcastReload()
 		s.respond(w, req, nil, http.StatusNoContent, nil)
 	}
 }
@@ -326,7 +331,43 @@ func (s *QServer) AddPSTeamPoints() http.HandlerFunc {
 		if _, ok := s.wsHubs[r.Code]; !ok {
 			s.wsHubs[r.Code] = newHub()
 		}
-		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.wsHubs[r.Code].BroadcastReload()
+		s.respond(w, req, nil, http.StatusNoContent, nil)
+	}
+}
+
+func (s *QServer) BroadcastChatMessage() http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		type Request struct {
+			Code    uint   `json:"code,omitempty"`
+			Message string `json:"message,omitempty"`
+			User    string `json:"user,omitempty"`
+		}
+		r := Request{}
+		defer req.Body.Close()
+		err := json.NewDecoder(req.Body).Decode(&r)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, err)
+			return
+		}
+		params := mux.Vars(req)
+		idStr := params["code"]
+		var id int
+		id, err = strconv.Atoi(idStr)
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, fmt.Errorf("Bad Code supplied"))
+			return
+		}
+		r.Code = uint(id)
+		fmt.Println(r)
+		u, err := getUserFromContext(req.Context(), s.UserContextKey())
+		if err != nil {
+			s.respond(w, req, nil, http.StatusBadRequest, fmt.Errorf("Bad User Supplied"))
+		}
+		if _, ok := s.wsHubs[r.Code]; !ok {
+			s.wsHubs[r.Code] = newHub()
+		}
+		s.wsHubs[r.Code].BroadcastChat(u.Name, r.Message)
 		s.respond(w, req, nil, http.StatusNoContent, nil)
 	}
 }
@@ -354,7 +395,7 @@ func (s *QServer) RevealPSCurrentAnswer() http.HandlerFunc {
 		if _, ok := s.wsHubs[r.Code]; !ok {
 			s.wsHubs[r.Code] = newHub()
 		}
-		s.wsHubs[r.Code].broadcast <- []byte("reload")
+		s.wsHubs[r.Code].BroadcastReload()
 		s.respond(w, req, nil, http.StatusNoContent, nil)
 	}
 }
