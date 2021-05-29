@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"encoding/json"
 	"sync"
 	"time"
 )
@@ -43,6 +44,24 @@ func newHub() *wsHub {
 		}
 	}()
 	return h
+}
+
+func (h *wsHub) BroadcastReload() {
+	reload := map[string]string{
+		"action": "reload",
+	}
+	reloadBytes, _ := json.Marshal(reload)
+	h.broadcast <- reloadBytes
+}
+
+func (h *wsHub) BroadcastChat(name, message string) {
+	chatMessage := map[string]string{
+		"action":  "chat",
+		"name":    name,
+		"message": message,
+	}
+	chatBytes, _ := json.Marshal(chatMessage)
+	h.broadcast <- chatBytes
 }
 
 func (h *wsHub) addConnection(conn *connection) {
