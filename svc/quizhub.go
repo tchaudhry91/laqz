@@ -23,6 +23,10 @@ type QuizHub interface {
 	GetMyQuizzes(ctx context.Context) (qqz []*models.Quiz, err error)
 	GetPublicQuizzes(ctx context.Context) (qqz []*models.Quiz, err error)
 	AddQuestion(ctx context.Context, q *models.Question) (err error)
+	UpdateQuestion(ctx context.Context, id, quizID uint, q *models.Question) (err error)
+	DeleteQuestion(ctx context.Context, id, quizID uint) (err error)
+	GetQuestions(ctx context.Context, quizID uint) (qq []*models.Question, err error)
+	GetQuestion(ctx context.Context, id, quizID uint) (q *models.Question, err error)
 	ToggleQuizPrivacy(ctx context.Context, id uint) (err error)
 
 	PlaySessionSVC
@@ -180,4 +184,65 @@ func (hub *QHub) AddQuestion(ctx context.Context, q *models.Question) (err error
 	}
 	qz.AddQuestion(q)
 	return hub.db.UpdateQuiz(qz)
+}
+
+func (hub *QHub) GetQuestions(ctx context.Context, quizID uint) (qq []*models.Question, err error) {
+	u, err := getUserFromContext(ctx, hub.UserContextKey())
+	if err != nil {
+		return qq, err
+	}
+	qz, err := hub.db.GetQuiz(quizID)
+	if err != nil {
+		return qq, err
+	}
+	if !qz.IsCollaborator(u.Email) {
+		return qq, NotPermittedError
+	}
+
+	return hub.db.GetQuestionsByQuiz(quizID)
+}
+
+func (hub *QHub) GetQuestion(ctx context.Context, id uint, quizID uint) (q *models.Question, err error) {
+	u, err := getUserFromContext(ctx, hub.UserContextKey())
+	if err != nil {
+		return q, err
+	}
+	qz, err := hub.db.GetQuiz(quizID)
+	if err != nil {
+		return q, err
+	}
+	if !qz.IsCollaborator(u.Email) {
+		return q, NotPermittedError
+	}
+	return hub.db.GetQuestion(id)
+}
+
+func (hub *QHub) UpdateQuestion(ctx context.Context, id, quizID uint, q *models.Question) (err error) {
+	u, err := getUserFromContext(ctx, hub.UserContextKey())
+	if err != nil {
+		return err
+	}
+	qz, err := hub.db.GetQuiz(quizID)
+	if err != nil {
+		return err
+	}
+	if !qz.IsCollaborator(u.Email) {
+		return NotPermittedError
+	}
+	return hub.db.UpdateQuestion(id, q)
+}
+
+func (hub *QHub) DeleteQuestion(ctx context.Context, id, quizID uint) (err error) {
+	u, err := getUserFromContext(ctx, hub.UserContextKey())
+	if err != nil {
+		return err
+	}
+	qz, err := hub.db.GetQuiz(quizID)
+	if err != nil {
+		return err
+	}
+	if !qz.IsCollaborator(u.Email) {
+		return NotPermittedError
+	}
+	return hub.db.DeleteQuestion(id, quizID)
 }

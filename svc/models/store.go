@@ -1,6 +1,8 @@
 package models
 
 import (
+	"sort"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -19,6 +21,8 @@ type QuizStore interface {
 	GetQuizzesByUser(email string) (qzs []*Quiz, err error)
 	UpdateQuiz(qz *Quiz) error
 	CreateQuestion(q *Question) error
+	UpdateQuestion(id uint, q *Question) error
+	DeleteQuestion(id uint, quizID uint) error
 	GetQuestion(id uint) (q *Question, err error)
 	GetQuestionsByQuiz(qzID uint) (qq []*Question, err error)
 	GetTagByName(name string) (t *Tag, err error)
@@ -113,6 +117,15 @@ func (db *QuizPGStore) CreateQuestion(q *Question) error {
 	return db.client.Create(q).Error
 }
 
+func (db *QuizPGStore) UpdateQuestion(id uint, q *Question) error {
+	q.ID = id
+	return db.client.Save(q).Error
+}
+
+func (db *QuizPGStore) DeleteQuestion(id uint, quizID uint) error {
+	return db.client.Exec("delete from quiz_questions where question_id=? and quiz_id=?", id, quizID).Error
+}
+
 func (db *QuizPGStore) GetQuestion(id uint) (q *Question, err error) {
 	q = &Question{}
 	err = db.client.First(q, id).Error
@@ -133,7 +146,11 @@ func (db *QuizPGStore) GetQuestionsByQuiz(qzID uint) (qq []*Question, err error)
 	if err != nil {
 		return qq, err
 	}
-	return qz.Questions, nil
+	qq = qz.Questions
+	sort.Slice(qq, func(i, j int) bool {
+		return qq[i].ID < qq[j].ID
+	})
+	return qq, nil
 }
 
 func (db *QuizPGStore) GetTagByName(name string) (t *Tag, err error) {
